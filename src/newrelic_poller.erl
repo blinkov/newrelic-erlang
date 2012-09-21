@@ -15,7 +15,7 @@
 %%
 
 start_link(PollF) ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [PollF], []).
+    gen_server:start_link(?MODULE, [PollF], []).
 
 %%
 %% gen_server callbacks
@@ -34,11 +34,10 @@ handle_cast(_Msg, State) ->
 
 handle_info(poll, State) ->
     erlang:send_after(60000, self(), poll),
-    error_logger:info_msg("NewRelic polling~n"),
 
     Metrics = (State#state.poll_fun)(),
-    error_logger:info_msg("~p~n", [Metrics]),
 
+    error_logger:info_msg("~p~n", [Metrics]),
     error_logger:info_msg("~p~n", [newrelic:push(Metrics)]),
 
     {noreply, State}.
