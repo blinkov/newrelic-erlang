@@ -4,11 +4,13 @@
 
 
 app_name() ->
-    application:get_env(newrelic, application_name).
+    {ok, Name} = application:get_env(newrelic, application_name),
+    Name.
 
 
 license_key() ->
-    application:get_env(newrelic, license_key).
+    {ok, Key} = application:get_env(newrelic, license_key),
+    Key.
 
 
 get_redirect_host() ->
