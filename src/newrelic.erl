@@ -5,7 +5,7 @@
 
 app_name() ->
     {ok, Name} = application:get_env(newrelic, application_name),
-    Name.
+    list_to_binary(Name).
 
 
 license_key() ->
