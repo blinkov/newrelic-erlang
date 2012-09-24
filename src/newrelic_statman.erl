@@ -10,7 +10,9 @@ poll() ->
                    end,
                    Metrics),
 
-    lists:map(fun transform/1, Histograms).
+    lists:filter(fun (M) -> M =/= [] end,
+                 lists:map(fun transform/1, Histograms)).
+
 
 
 transform(Metric) ->
