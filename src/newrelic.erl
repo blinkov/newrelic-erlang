@@ -87,7 +87,7 @@ now_to_seconds() ->
 
 sample_data() ->
     [
-     [{[{name, <<"MFA/g8_location_server:call/2">>},
+     [{[{name, <<"MFA/gen_server:call/2">>},
         {scope, <<"WebTransaction/Uri/test">>}]},
       [20,
        2.0030434131622314,

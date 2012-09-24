@@ -6,8 +6,7 @@ poll() ->
     Histograms = lists:filter(
                    fun (Metric) ->
                            proplists:get_value(type, Metric) =:= histogram andalso
-                               (not is_list(proplists:get_value(node, Metric))) andalso
-                               proplists:get_value(node, Metric) =:= 'a@knutin'
+                               (not is_list(proplists:get_value(node, Metric)))
                    end,
                    Metrics),
 
