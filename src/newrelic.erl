@@ -33,9 +33,9 @@ connect(Host) ->
         "method=connect",
     Data = [{[
               {agent_version, <<"1.0">>},
-              {app_name, [<<"Statman New Relic Test">>]},
+              {app_name, [app_name()]},
               {host, <<"knutin">>},
-              {identifier, <<"Statman New Relic Test">>},
+              {identifier, app_name()},
               {pid, 1234},
               {environment, []},
               {language, <<"python">>},
