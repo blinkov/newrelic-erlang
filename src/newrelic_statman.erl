@@ -6,12 +6,14 @@ poll() ->
     Histograms = lists:filter(
                    fun (Metric) ->
                            proplists:get_value(type, Metric) =:= histogram andalso
-                               (not is_list(proplists:get_value(node, Metric)))
+                               (not is_list(proplists:get_value(node, Metric))) andalso
+                               proplists:get_value(value, Metric) =/= []
                    end,
                    Metrics),
 
-    lists:filter(fun (M) -> M =/= [] end,
-                 lists:map(fun transform/1, Histograms)).
+      lists:filter(fun (M) -> M =/= [] end,
+                   lists:map(fun transform/1, Histograms)).
+
 
 
 
@@ -33,14 +35,9 @@ transform(Metric) ->
         {Scope, total} when is_binary(Scope) ->
             [{[{name, <<"WebTransaction/Uri", Scope/binary>>},
                {scope, <<"">>}]},
-             Data] ++
-                [{[{name, <<"WebTransaction">>},
-                   {scope, <<"">>}]},
-                 Data] ++
-
-                [{[{name, <<"HttpDispatcher">>},
-                   {scope, <<"">>}]},
-                 Data]
+             Data];
+        _ ->
+            []
     end.
 
 

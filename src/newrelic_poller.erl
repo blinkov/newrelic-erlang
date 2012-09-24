@@ -36,9 +36,7 @@ handle_info(poll, State) ->
     erlang:send_after(60000, self(), poll),
 
     Metrics = (State#state.poll_fun)(),
-
-    error_logger:info_msg("~p~n", [Metrics]),
-    error_logger:info_msg("~p~n", [newrelic:push(Metrics)]),
+    newrelic:push(Metrics),
 
     {noreply, State}.
 
