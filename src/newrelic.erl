@@ -20,9 +20,15 @@ get_redirect_host() ->
         "marshal_format=json&"
         "method=get_redirect_host",
 
-    {ok, {{200, "OK"}, _, Body}} = lhttpc:request(Url, post, [{"Content-Encoding", "identity"}], <<"[]">>, 5000),
-    {Struct} = jiffy:decode(Body),
-    binary_to_list(proplists:get_value(<<"return_value">>, Struct)).
+
+    case lhttpc:request(Url, post, [{"Content-Encoding", "identity"}],
+                        <<"[]">>, 5000) of
+        {ok, {{200, "OK"}, _, Body}} ->
+            {Struct} = jiffy:decode(Body),
+            binary_to_list(proplists:get_value(<<"return_value">>, Struct));
+        {ok, {{503, _}, _, _}} ->
+            throw(newrelic_down)
+    end.
 
 
 connect(Host) ->
@@ -44,10 +50,15 @@ connect(Host) ->
                           ]}}
              ]}],
 
-    {ok, {{200, "OK"}, _, Body}} = lhttpc:request(Url, post, [{"Content-Encoding", "identity"}], jiffy:encode(Data), 5000),
-    {Struct} = jiffy:decode(Body),
-    {Return} = proplists:get_value(<<"return_value">>, Struct),
-    proplists:get_value(<<"agent_run_id">>, Return).
+    case lhttpc:request(Url, post, [{"Content-Encoding", "identity"}],
+                        jiffy:encode(Data), 5000) of
+        {ok, {{200, "OK"}, _, Body}} ->
+            {Struct} = jiffy:decode(Body),
+            {Return} = proplists:get_value(<<"return_value">>, Struct),
+            proplists:get_value(<<"agent_run_id">>, Return);
+        {ok, {{503, _}, _, _}} ->
+            throw(newrelic_down)
+    end.
 
 
 push_metric_data(Host, RunId, MetricData) ->
@@ -66,7 +77,13 @@ push_metric_data(Host, RunId, MetricData) ->
             MetricData
            ],
 
-    lhttpc:request(Url, post, [{"Content-Encoding", "identity"}], jiffy:encode(Data), 5000).
+    case lhttpc:request(Url, post, [{"Content-Encoding", "identity"}],
+                        jiffy:encode(Data), 5000) of
+        {ok, {{200, "OK"}, _, Response}} ->
+            Response;
+        {ok, {{503, _}, _, _}} ->
+            throw(newrelic_down)
+    end.
 
 
 push(Data) ->

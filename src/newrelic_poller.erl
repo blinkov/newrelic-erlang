@@ -36,7 +36,12 @@ handle_info(poll, State) ->
     erlang:send_after(60000, self(), poll),
 
     Metrics = (State#state.poll_fun)(),
-    newrelic:push(Metrics),
+    case catch newrelic:push(Metrics) of
+        newrelic_down ->
+            error_logger:info_msg("newrelic_poller: newrelic is down~n");
+        _ ->
+            ok
+    end,
 
     {noreply, State}.
 
