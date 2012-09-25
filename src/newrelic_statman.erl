@@ -24,7 +24,7 @@ transform(Metric) ->
             proplists:get_value(sum, Summary) / 1000000,
             proplists:get_value(min, Summary) / 1000000,
             proplists:get_value(max, Summary) / 1000000,
-            proplists:get_value(sum2, Summary) / 1000000000000
+            proplists:get_value(sum2, Summary) / 1000000000
            ],
 
     case proplists:get_value(key, Metric) of
