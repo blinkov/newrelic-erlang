@@ -55,6 +55,8 @@ add_total(Ms) ->
        {scope, <<"">>}]},
      [N, Sum, Sum, Min, Max, Sum2]].
 
+pluck(_, []) ->
+    0;
 pluck(N, L) ->
     lists:map(fun ([_, []]) -> 0;
                   ([_, D]) -> lists:nth(N, D)
