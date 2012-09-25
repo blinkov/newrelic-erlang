@@ -56,7 +56,7 @@ add_total(Ms) ->
      [N, Sum, Sum, Min, Max, Sum2]].
 
 pluck(_, []) ->
-    0;
+    [0];
 pluck(N, L) ->
     lists:map(fun ([_, []]) -> 0;
                   ([_, D]) -> lists:nth(N, D)
