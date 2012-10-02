@@ -1,12 +1,12 @@
 # NewRelic for Erlang
 
 This library implements the New Relic API and allows sending arbitrary
-metrics directly to their collectors from Erlang. (New
-Relic)[http://newrelic.com/] is a paid "application monitoring"
+metrics directly to their collectors from Erlang. [New
+Relic](http://newrelic.com/) is a paid "application monitoring"
 service.
 
 You need to supply the metrics on the correct format. If you happen to
-be using (statman)[https://github.com/knutin/statman] you can use the
+be using [statman](https://github.com/knutin/statman) you can use the
 included `newrelic_statman` transformer. It is fairly easy to
 transform the metrics, so if you're using Folsom, estatsd or your own
 tools, have a look at `newrelic_statman` to see how it's done.
