@@ -1,6 +1,95 @@
 -module(newrelic).
 -compile([export_all]).
 
+-define(BASE_URL, "http://~s/agent_listener/invoke_raw_method?").
+
+-define(l2b(L), list_to_binary(L)).
+-define(l2i(L), list_to_integer(L)).
+
+%%
+%% API
+%%
+
+%% @doc: Connects to New Relic and sends the hopefully correctly
+%% formatted data and registers it under the given hostname.
+push(Hostname, Data) ->
+    Collector = get_redirect_host(),
+    RunId = connect(Collector, Hostname),
+    push_metric_data(Collector, RunId, Data).
+
+
+%%
+%% NewRelic protocol
+%%
+
+
+get_redirect_host() ->
+    Url = url([{method, get_redirect_host}]),
+    case request(Url) of
+        {ok, {{200, "OK"}, _, Body}} ->
+            {Struct} = jiffy:decode(Body),
+            binary_to_list(proplists:get_value(<<"return_value">>, Struct));
+        {ok, {{503, _}, _, _}} ->
+            throw(newrelic_down)
+    end.
+
+
+connect(Collector, Hostname) ->
+    Url = url(Collector, [{method, connect}]),
+
+    Data = [{[
+              {agent_version, <<"1.5.0.103">>},
+              {app_name, [app_name()]},
+              {host, ?l2b(Hostname)},
+              {identifier, app_name()},
+              {pid, ?l2i(os:getpid())},
+              {environment, []},
+              {language, <<"python">>},
+              {settings, {[]}}
+             ]}],
+
+    case request(Url, jiffy:encode(Data)) of
+        {ok, {{200, "OK"}, _, Body}} ->
+            {Struct} = jiffy:decode(Body),
+            {Return} = proplists:get_value(<<"return_value">>, Struct),
+            proplists:get_value(<<"agent_run_id">>, Return);
+        {ok, {{503, _}, _, _}} ->
+            throw(newrelic_down)
+    end.
+
+
+push_metric_data(Collector, RunId, MetricData) ->
+    Url = url(Collector, [{method, metric_data},
+                          {run_id, RunId}]),
+
+    Data = [RunId,
+            now_to_seconds() - 60,
+            now_to_seconds(),
+            MetricData],
+
+    case request(Url, jiffy:encode(Data)) of
+        {ok, {{200, "OK"}, _, Response}} ->
+            {Struct} = jiffy:decode(Response),
+            case proplists:get_value(<<"exception">>, Struct) of
+                undefined ->
+                    ok;
+                Exception ->
+                    {error, Exception}
+            end;
+        {ok, {{503, _}, _, _}} ->
+            throw(newrelic_down)
+    end.
+
+
+
+%%
+%% HELPERS
+%%
+
+
+now_to_seconds() ->
+    {MegaSeconds, Seconds, _} = os:timestamp(),
+    MegaSeconds * 1000000 + Seconds.
 
 
 app_name() ->
@@ -13,93 +102,39 @@ license_key() ->
     Key.
 
 
-get_redirect_host() ->
-    Url = "http://collector.newrelic.com/agent_listener/invoke_raw_method?"
-        "protocol_version=9&"
-        "license_key=" ++ license_key() ++ "&"
-        "marshal_format=json&"
-        "method=get_redirect_host",
+
+request(Url) ->
+    request(Url, <<"[]">>).
+
+request(Url, Body) ->
+    lhttpc:request(Url, post, [{"Content-Encoding", "identity"}],
+                   Body, 5000).
 
 
-    case lhttpc:request(Url, post, [{"Content-Encoding", "identity"}],
-                        <<"[]">>, 5000) of
-        {ok, {{200, "OK"}, _, Body}} ->
-            {Struct} = jiffy:decode(Body),
-            binary_to_list(proplists:get_value(<<"return_value">>, Struct));
-        {ok, {{503, _}, _, _}} ->
-            throw(newrelic_down)
-    end.
+url(Args) ->
+    url("collector.newrelic.com", Args).
+
+url(Host, Args) ->
+    BaseArgs = [{protocol_version, 9},
+                {license_key,  license_key()},
+                {marshal_format, json}],
 
 
-connect(Host) ->
-    Url = "http://" ++ Host ++ "/agent_listener/invoke_raw_method?"
-        "protocol_version=9&"
-        "license_key=" ++ license_key() ++ "&"
-        "marshal_format=json&"
-        "method=connect",
-    Data = [{[
-              {agent_version, <<"1.0">>},
-              {app_name, [app_name()]},
-              {host, <<"knutin">>},
-              {identifier, app_name()},
-              {pid, 1234},
-              {environment, []},
-              {language, <<"python">>},
-              {settings, {[
+    lists:flatten([io_lib:format(?BASE_URL, [Host]), urljoin(Args ++ BaseArgs)]).
 
-                          ]}}
-             ]}],
+urljoin([H | T]) ->
+    [url_var(H) | [["&", url_var(X)] || X <- T]];
+urljoin([]) ->
+    [].
 
-    case lhttpc:request(Url, post, [{"Content-Encoding", "identity"}],
-                        jiffy:encode(Data), 5000) of
-        {ok, {{200, "OK"}, _, Body}} ->
-            {Struct} = jiffy:decode(Body),
-            {Return} = proplists:get_value(<<"return_value">>, Struct),
-            proplists:get_value(<<"agent_run_id">>, Return);
-        {ok, {{503, _}, _, _}} ->
-            throw(newrelic_down)
-    end.
+url_var({Key, Value}) -> [to_list(Key), "=", to_list(Value)].
 
 
-push_metric_data(Host, RunId, MetricData) ->
-    Url = "http://" ++ Host ++ "/agent_listener/invoke_raw_method?"
-        "protocol_version=9&"
-        "license_key=" ++ license_key() ++ "&"
-        "marshal_format=json&"
-        "method=metric_data&"
-        "run_id=" ++ integer_to_list(RunId),
+to_list(Atom) when is_atom(Atom) -> atom_to_list(Atom);
+to_list(List) when is_list(List)-> List;
+to_list(Int) when is_integer(Int) -> integer_to_list(Int).
 
 
-    Data = [
-            RunId,
-            now_to_seconds() - 60,
-            now_to_seconds(),
-            MetricData
-           ],
-
-    case lhttpc:request(Url, post, [{"Content-Encoding", "identity"}],
-                        jiffy:encode(Data), 5000) of
-        {ok, {{200, "OK"}, _, Response}} ->
-            Response;
-        {ok, {{503, _}, _, _}} ->
-            throw(newrelic_down)
-    end.
-
-
-push(Data) ->
-    Host = get_redirect_host(),
-    RunId = connect(Host),
-    push_metric_data(Host, RunId, Data).
-
-push_sample() ->
-    Host = get_redirect_host(),
-    RunId = connect(Host),
-    push_metric_data(Host, RunId, sample_data()).
-
-
-now_to_seconds() ->
-    {MegaSeconds, Seconds, _} = os:timestamp(),
-    MegaSeconds * 1000000 + Seconds.
 
 
 sample_data() ->
@@ -184,5 +219,5 @@ sample_data() ->
        2.005380868911743,
        2.005380868911743,
        4.021552429397218]]
-
     ].
+

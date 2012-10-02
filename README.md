@@ -24,8 +24,10 @@ your keys, you can use New Relic "for free".
    breakdown"
  * `{<<"/hello/world">>, {db, <<"something">>}}` - Web transaction
    with database access, will show up in the "Performance breakdown"
-   as well as "Overview" and "Database"
- * `{<<"/hello/world">>, {ext, <<"some.host.name">>}}` - External call
+   as well as "Overview". Unfortunately not in "Database" yet
+ * `{<<"/hello/world">>, total}` - Total time of the transaction,
+   inclusive any children. Will show up in the "Overview"
+  * `{<<"/hello/world">>, {ext, <<"some.host.name">>}}` - External call
    inside a web transaction, will show up in the "Performance
    breakdown" and "External services"
  * `{foo, bar}` - Background task
