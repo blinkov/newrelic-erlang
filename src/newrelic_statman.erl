@@ -128,7 +128,12 @@ pluck(Name, N, L) ->
                           nomatch ->
                               0;
                           _ ->
-                              lists:nth(N, D)
+                              case proplists:get_value(scope, Struct) =:= <<"">> of
+                                  true ->
+                                      lists:nth(N, D);
+                                  false ->
+                                      0
+                              end
                       end
               end, L).
 
