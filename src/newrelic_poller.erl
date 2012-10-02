@@ -35,12 +35,23 @@ handle_cast(_Msg, State) ->
 handle_info(poll, State) ->
     erlang:send_after(60000, self(), poll),
 
-    Metrics = (State#state.poll_fun)(),
-    case catch newrelic:push(Metrics) of
-        newrelic_down ->
-            error_logger:info_msg("newrelic_poller: newrelic is down~n");
-        _ ->
-            ok
+    {ok, Hostname} = inet:gethostname(),
+
+    case catch (State#state.poll_fun)() of
+        {'EXIT', Error} ->
+            error_logger:warning_msg("newrelic_poller: polling failed: ~p~n", [Error]),
+            ok;
+        Metrics ->
+            case catch newrelic:push(Hostname, Metrics) of
+                ok ->
+                    ok;
+                newrelic_down ->
+                    error_logger:warning_msg("newrelic_poller: newrelic is down~n");
+                Other ->
+                    error_logger:warning_msg("newrelic_poller: push failed: ~p~n",
+                                             [Other]),
+                    ok
+            end
     end,
 
     {noreply, State}.
