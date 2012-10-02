@@ -49,7 +49,7 @@ transform(Metric) ->
 
             ];
 
-        {Scope, {ext, Host}} when is_binary(Host) ->
+        {Scope, {ext, Host}} when is_binary(Scope) andalso is_binary(Host) ->
             [
              [{[{name, <<"External/all">>},
                {scope, <<"">>}]},
