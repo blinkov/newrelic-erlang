@@ -11,6 +11,12 @@ included `newrelic_statman` transformer. It is fairly easy to
 transform the metrics, so if you're using Folsom, estatsd or your own
 tools, have a look at `newrelic_statman` to see how it's done.
 
+## Configuration
+
+Two application environment variables must be set in the `newrelic` app:
+
+ * `application_name`: human readable name of the app, will show up in the web interface
+ * `license_key`: secret license key
 
 
 ## Statman integration
