@@ -38,3 +38,5 @@ your keys, you can use New Relic "for free".
    breakdown" and "External services"
  * `{foo, bar}` - Background task
 
+## JSON Encoding
+This fork assumes that the [`mochijson2_fork`](https://github.com/blinkov/sockjs-erlang/blob/master/src/mochijson2_fork.erl) module is available in the path.

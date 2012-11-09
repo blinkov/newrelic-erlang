@@ -35,15 +35,15 @@ transform(Metric) ->
     case proplists:get_value(key, Metric) of
         {Scope, {db, Segment}} when is_binary(Scope) ->
             [
-             [{[{name, <<"Database", "/", (to_bin(Segment))/binary>>},
+             [{struct, [{name, <<"Database", "/", (to_bin(Segment))/binary>>},
                 {scope, scope2bin(Scope)}]},
               Data],
 
-             [{[{name, <<"Database/allWeb">>},
+             [{struct, [{name, <<"Database/allWeb">>},
                 {scope, <<"">>}]},
               Data],
 
-             [{[{name, <<"Database/all">>},
+             [{struct, [{name, <<"Database/all">>},
                 {scope, <<"">>}]},
               Data]
 
@@ -51,40 +51,40 @@ transform(Metric) ->
 
         {Scope, {ext, Host}} when is_binary(Scope) andalso is_binary(Host) ->
             [
-             [{[{name, <<"External/all">>},
+             [{struct, [{name, <<"External/all">>},
                {scope, <<"">>}]},
              Data],
 
-             [{[{name, <<"External/allWeb">>},
+             [{struct, [{name, <<"External/allWeb">>},
                {scope, <<"">>}]},
              Data],
 
-             [{[{name, <<"External/", Host/binary>>},
+             [{struct, [{name, <<"External/", Host/binary>>},
                {scope, <<"">>}]},
              Data],
 
-             [{[{name, <<"External/", Host/binary, "/all">>},
+             [{struct, [{name, <<"External/", Host/binary, "/all">>},
                {scope, <<"">>}]},
              Data],
 
-             [{[{name, <<"External/", Host/binary>>},
+             [{struct, [{name, <<"External/", Host/binary>>},
                {scope, scope2bin(Scope)}]},
               Data]
 
             ];
 
         {Scope, {Class, Segment}} when is_binary(Scope) ->
-            [[{[{name, <<(class2bin(Class))/binary, "/", (to_bin(Segment))/binary>>},
+            [[{struct, [{name, <<(class2bin(Class))/binary, "/", (to_bin(Segment))/binary>>},
                 {scope, scope2bin(Scope)}]},
               Data]];
 
         {Scope, total} when is_binary(Scope) ->
-            [[{[{name, <<"WebTransaction/Uri", Scope/binary>>},
+            [[{struct, [{name, <<"WebTransaction/Uri", Scope/binary>>},
                 {scope, <<"">>}]},
              Data]];
 
         {A, B} when is_atom(A) andalso is_atom(B) ->
-            [[{[{name, <<"OtherTransaction/",
+            [[{struct, [{name, <<"OtherTransaction/",
                          (to_bin(A))/binary, "/",
                          (to_bin(B))/binary>>},
                 {scope, <<"">>}]},
@@ -102,7 +102,7 @@ webtransaction_total(Ms) ->
     Max  = lists:max(pluck(Name, 5, Ms)),
     Sum2 = lists:sum(pluck(Name, 6, Ms)),
 
-    [{[{name, <<"HttpDispatcher">>},
+    [{struct, [{name, <<"HttpDispatcher">>},
        {scope, <<"">>}]},
      [N, Sum, Sum, Min, Max, Sum2]].
 
@@ -115,7 +115,7 @@ db_total(Ms) ->
     Max  = lists:max(pluck(Name, 5, Ms)),
     Sum2 = lists:sum(pluck(Name, 6, Ms)),
 
-    [{[{name, <<"Database/all">>},
+    [{struct, [{name, <<"Database/all">>},
        {scope, <<"">>}]},
      [N, Sum, Sum, Min, Max, Sum2]].
 

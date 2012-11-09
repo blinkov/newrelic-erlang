@@ -27,7 +27,7 @@ get_redirect_host() ->
     Url = url([{method, get_redirect_host}]),
     case request(Url) of
         {ok, {{200, "OK"}, _, Body}} ->
-            {Struct} = jiffy:decode(Body),
+            {struct, Struct} = mochijson2_fork:decode(Body),
             binary_to_list(proplists:get_value(<<"return_value">>, Struct));
         {ok, {{503, _}, _, _}} ->
             throw(newrelic_down)
@@ -37,21 +37,29 @@ get_redirect_host() ->
 connect(Collector, Hostname) ->
     Url = url(Collector, [{method, connect}]),
 
-    Data = [{[
-              {agent_version, <<"1.5.0.103">>},
-              {app_name, [app_name()]},
-              {host, ?l2b(Hostname)},
-              {identifier, app_name()},
-              {pid, ?l2i(os:getpid())},
-              {environment, []},
-              {language, <<"python">>},
-              {settings, {[]}}
-             ]}],
+% local_config['pid'] = os.getpid()
+%         local_config['language'] = 'python'
+%         local_config['host'] = socket.gethostname()
+%         local_config['app_name'] = app_names
+%         local_config['identifier'] = ','.join(app_names)
+%         local_config['agent_version'] = version
+%         local_config['environment'] = environment
+%         local_config['settings'] = settings
 
-    case request(Url, jiffy:encode(Data)) of
-        {ok, {{200, "OK"}, _, Body}} ->
-            {Struct} = jiffy:decode(Body),
-            {Return} = proplists:get_value(<<"return_value">>, Struct),
+    Data = [{struct, [
+              {pid, ?l2i(os:getpid())},
+              {language, <<"python">>},
+              {host, ?l2b(Hostname)},
+              {app_name, [app_name()]},
+              {identifier, app_name()},
+              {agent_version, <<"1.7.0.31">>},
+              {environment, []},
+              {settings, {struct, []}}
+             ]}],
+    case request(Url, mochijson2_fork:encode(Data)) of
+        {ok, {{200, "OK"}, _, Body}} -> 
+            {struct, Struct} = mochijson2_fork:decode(Body),
+            {struct, Return} = proplists:get_value(<<"return_value">>, Struct),
             proplists:get_value(<<"agent_run_id">>, Return);
         {ok, {{503, _}, _, _}} ->
             throw(newrelic_down)
@@ -67,9 +75,9 @@ push_metric_data(Collector, RunId, MetricData) ->
             now_to_seconds(),
             MetricData],
 
-    case request(Url, jiffy:encode(Data)) of
+    case request(Url, mochijson2_fork:encode(Data)) of
         {ok, {{200, "OK"}, _, Response}} ->
-            {Struct} = jiffy:decode(Response),
+            {struct, Struct} = mochijson2_fork:decode(Response),
             case proplists:get_value(<<"exception">>, Struct) of
                 undefined ->
                     ok;
@@ -139,7 +147,7 @@ to_list(Int) when is_integer(Int) -> integer_to_list(Int).
 
 sample_data() ->
     [
-     [{[{name, <<"MFA/gen_server:call/2">>},
+     [{struct, [{name, <<"MFA/gen_server:call/2">>},
         {scope, <<"WebTransaction/Uri/test">>}]},
       [20,
        2.0030434131622314,
@@ -148,7 +156,7 @@ sample_data() ->
        0.10023093223571777,
        0.2006091550569522]],
 
-     [{[{name, <<"Database/Redis-HSET">>},
+     [{struct, [{name, <<"Database/Redis-HSET">>},
         {scope, <<"WebTransaction/Uri/test">>}]},
       [20,
        2.0030434131622314,
@@ -157,7 +165,7 @@ sample_data() ->
        0.10023093223571777,
        0.2006091550569522]],
 
-     [{[{name, <<"S3/GET">>},
+     [{struct, [{name, <<"S3/GET">>},
         {scope, <<"WebTransaction/Uri/test">>}]},
       [20,
        2.0030434131622314,
@@ -166,7 +174,7 @@ sample_data() ->
        0.10023093223571777,
        0.2006091550569522]],
 
-     [{[{name, <<"WebTransaction">>},
+     [{struct, [{name, <<"WebTransaction">>},
         {scope, <<"">>}]},
       [1,
        2.0055530071258545,
@@ -175,7 +183,7 @@ sample_data() ->
        2.0055530071258545,
        4.022242864391558]],
 
-     [{[{name, <<"HttpDispatcher">>},
+     [{struct, [{name, <<"HttpDispatcher">>},
         {scope, <<"">>}]},
       [1,
        2.0055530071258545,
@@ -184,7 +192,7 @@ sample_data() ->
        2.0055530071258545,
        4.022242864391558]],
 
-     [{[{name, <<"Database/allWeb">>},
+     [{struct, [{name, <<"Database/allWeb">>},
         {scope, <<"">>}]},
       [1,
        2.0055530071258545,
@@ -193,7 +201,7 @@ sample_data() ->
        2.0055530071258545,
        4.022242864391558]],
 
-     [{[{name, <<"Memcache/allWeb">>},
+     [{struct, [{name, <<"Memcache/allWeb">>},
         {scope, <<"">>}]},
       [1,
        2.0055530071258545,
@@ -202,7 +210,7 @@ sample_data() ->
        2.0055530071258545,
        4.022242864391558]],
 
-     [{[{name, <<"WebTransaction/Uri/test">>},
+     [{struct, [{name, <<"WebTransaction/Uri/test">>},
         {scope, <<"">>}]},
       [1,
        2.0055530071258545,
@@ -211,7 +219,7 @@ sample_data() ->
        2.0055530071258545,
        4.022242864391558]],
 
-     [{[{name, <<"Python/WSGI/Application">>},
+     [{struct, [{name, <<"Python/WSGI/Application">>},
         {scope, <<"WebTransaction/Uri/test">>}]},
       [1,
        2.005380868911743,

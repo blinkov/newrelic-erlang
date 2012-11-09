@@ -10,7 +10,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    application:start(sasl),
+    % application:start(sasl),
     application:start(crypto),
     application:start(public_key),
     application:start(ssl),
