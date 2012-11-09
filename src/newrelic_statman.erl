@@ -123,7 +123,7 @@ pluck(_, _, []) ->
     [0];
 pluck(Name, N, L) ->
     lists:map(fun ([_, []]) -> 0;
-                  ([{Struct}, D]) ->
+                  ([{struct, Struct}, D]) ->
                       case binary:match(proplists:get_value(name, Struct), Name) of
                           nomatch ->
                               0;
