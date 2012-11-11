@@ -116,7 +116,7 @@ request(Url) ->
 
 request(Url, Body) ->
     lhttpc:request(Url, post, [{"Content-Encoding", "identity"}],
-                   Body, 5000).
+                   Body, 30000).
 
 
 url(Args) ->
